@@ -1,6 +1,6 @@
 # aiopipe -- Multiprocess communication pipe for asyncio
 
-[Documentation](http://kchmck.github.io/pdoc/aiopipe)
+[Documentation](http://kchmck.github.io/pdoc/aiopipe/)
 
 This package wraps the [`os.pipe`](https://docs.python.org/3/library/os.html#os.pipe)
 simplex communication pipe so it can be used as part of the non-blocking
