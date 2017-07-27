@@ -31,14 +31,14 @@ async def mainTask(eventLoop):
     stream = await rx.open(eventLoop)
     msg = await stream.readline()
 
-    assert msg == b"hi from child process\\n"
+    assert msg == b"hi from child process\n"
 
 def childProc(tx):
     eventLoop = asyncio.new_event_loop()
     stream = eventLoop.run_until_complete(tx.open(eventLoop))
 
     with closing(stream):
-        stream.write(b"hi from child process\\n")
+        stream.write(b"hi from child process\n")
 
 eventLoop = asyncio.get_event_loop()
 eventLoop.run_until_complete(mainTask(eventLoop))
