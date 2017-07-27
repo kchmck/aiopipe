@@ -33,6 +33,8 @@ async def mainTask(eventLoop):
 
     assert msg == b"hi from child process\n"
 
+    proc.join()
+
 def childProc(tx):
     eventLoop = asyncio.new_event_loop()
     stream = eventLoop.run_until_complete(tx.open(eventLoop))

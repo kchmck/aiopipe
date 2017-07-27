@@ -29,6 +29,7 @@ async def mainTask(eventLoop):
     msg = await stream.readline()
 
     assert msg == b"hi from child process\\n"
+    proc.join()
 
 def childProc(tx):
     eventLoop = asyncio.new_event_loop()
