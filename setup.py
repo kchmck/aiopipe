@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="aiopipe",
-    version="0.1.1",
+    version="0.1.2",
     description="Multiprocess communication pipe for asyncio",
     author="Mick Koch",
     author_email="mick@kochm.co",
