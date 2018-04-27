@@ -44,6 +44,7 @@ eventLoop.run_until_complete(mainTask(eventLoop))
 """
 
 from asyncio import StreamReader, StreamWriter, StreamReaderProtocol
+import asyncio
 import os
 
 __pdoc__ = {}
