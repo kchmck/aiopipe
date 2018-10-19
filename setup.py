@@ -14,8 +14,8 @@ setup(
     packages=["aiopipe"],
     extras_require={
         "dev": [
-            "pylint==1.6.5",
-            "pytest==3.0.6",
+            "pylint~=2.1",
+            "pytest~=3.6",
         ],
     },
     classifiers=[
