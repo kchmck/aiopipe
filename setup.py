@@ -9,6 +9,7 @@ setup(
     license="MIT",
     url="https://github.com/kchmck/aiopipe",
     packages=["aiopipe"],
+    python_requires=">=3.5",
     extras_require={
         "dev": [
             "pylint~=2.1",
