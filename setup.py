@@ -1,8 +1,5 @@
 from setuptools import setup
 
-with open("Readme.md") as f:
-    readme = f.read()
-
 setup(
     name="aiopipe",
     version="0.1.2",
@@ -28,6 +25,4 @@ setup(
         "License :: OSI Approved :: MIT License",
     ],
     keywords="async asyncio pipe os.pipe",
-    long_description=readme,
-    long_description_content_type="text/markdown",
 )
