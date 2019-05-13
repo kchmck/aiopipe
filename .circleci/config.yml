@@ -1,0 +1,59 @@
+version: 2.1
+commands:
+  commonsteps:
+    steps:
+      - checkout
+      - run: |
+          pip install .[dev]
+          tox -e test
+jobs:
+  build_target:
+    docker:
+      - image: python:3.7
+    steps:
+      - checkout
+      - run: |
+          python setup.py sdist
+          python setup.py bdist_wheel
+          pip install .[dev]
+          tox -e test,lint
+      - store_artifacts:
+          path: dist
+          destination: artifacts
+
+  build_35:
+    docker:
+      - image: python:3.5
+    steps:
+      - commonsteps
+
+  build_36:
+    docker:
+      - image: python:3.6
+    steps:
+      - commonsteps
+
+  build_latest:
+    docker:
+      - image: python:latest
+    steps:
+      - commonsteps
+
+workflows:
+  version: 2
+  workflow:
+    jobs:
+      - build_target
+      - build_35
+      - build_36
+      - build_latest
+
+  check_latest:
+    triggers:
+      - schedule:
+          cron: "0 0 * * 0"
+          filters:
+            branches:
+              only: master
+    jobs:
+      - build_latest
