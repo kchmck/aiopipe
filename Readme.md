@@ -12,38 +12,37 @@ The following example opens a pipe with the write end in the child process and t
 end in the parent process:
 
 ```python
-from contextlib import closing
-from multiprocessing import Process
-import asyncio
-
-from aiopipe import aiopipe
-
-async def mainTask(eventLoop):
-    rx, tx = aiopipe()
-
-    with tx.send() as tx:
-        proc = Process(target=childProc, args=(tx,))
-        proc.start()
-
-    # The write end is now available in the child process
-    # and invalidated in the parent process.
-
-    stream = await rx.open(eventLoop)
-    msg = await stream.readline()
-
-    assert msg == b"hi from child process\n"
-
-    proc.join()
-
-def childProc(tx):
-    eventLoop = asyncio.new_event_loop()
-    stream = eventLoop.run_until_complete(tx.open(eventLoop))
-
-    with closing(stream):
-        stream.write(b"hi from child process\n")
-
-eventLoop = asyncio.get_event_loop()
-eventLoop.run_until_complete(mainTask(eventLoop))
+>>> from multiprocessing import Process
+>>> import asyncio
+>>>
+>>> from aiopipe import aiopipe
+>>>
+>>> async def maintask():
+...     rx, tx = aiopipe()
+...
+...     with tx.detach() as tx:
+...         proc = Process(target=childproc, args=(tx,))
+...         proc.start()
+...
+...     # The write end is now available in the child process
+...     # and detached from the parent process.
+...
+...     async with rx.open() as rx:
+...         msg = await rx.readline()
+...
+...     proc.join()
+...     return msg
+>>>
+>>> def childproc(tx):
+...     asyncio.run(childtask(tx))
+>>>
+>>> async def childtask(tx):
+...     async with tx.open() as tx:
+...         tx.write(b"hi from the child process\\n")
+>>>
+>>> asyncio.run(maintask())
+b'hi from the child process\\n'
+>>>
 ```
 
 ## Installation

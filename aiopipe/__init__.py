@@ -9,37 +9,37 @@ The following example opens a pipe with the write end in the child process and t
 end in the parent process:
 
 ```python3
-from contextlib import closing
-from multiprocessing import Process
-import asyncio
-
-from aiopipe import aiopipe
-
-async def mainTask(eventLoop):
-    rx, tx = aiopipe()
-
-    with tx.send() as tx:
-        proc = Process(target=childProc, args=(tx,))
-        proc.start()
-
-    # The write end is now available in the child process
-    # and invalidated in the parent process.
-
-    stream = await rx.open(eventLoop)
-    msg = await stream.readline()
-
-    assert msg == b"hi from child process\\n"
-    proc.join()
-
-def childProc(tx):
-    eventLoop = asyncio.new_event_loop()
-    stream = eventLoop.run_until_complete(tx.open(eventLoop))
-
-    with closing(stream):
-        stream.write(b"hi from child process\\n")
-
-eventLoop = asyncio.get_event_loop()
-eventLoop.run_until_complete(mainTask(eventLoop))
+>>> from multiprocessing import Process
+>>> import asyncio
+>>>
+>>> from aiopipe import aiopipe
+>>>
+>>> async def maintask():
+...     rx, tx = aiopipe()
+...
+...     with tx.detach() as tx:
+...         proc = Process(target=childproc, args=(tx,))
+...         proc.start()
+...
+...     # The write end is now available in the child process
+...     # and detached from the parent process.
+...
+...     async with rx.open() as rx:
+...         msg = await rx.readline()
+...
+...     proc.join()
+...     return msg
+>>>
+>>> def childproc(tx):
+...     asyncio.run(childtask(tx))
+>>>
+>>> async def childtask(tx):
+...     async with tx.open() as tx:
+...         tx.write(b"hi from the child process\\n")
+>>>
+>>> asyncio.run(maintask())
+b'hi from the child process\\n'
+>>>
 ```
 """
 
@@ -52,19 +52,19 @@ __pdoc__ = {}
 def aiopipe():
     """
     Create a new multiprocess communication pipe, returning `(rx, tx)`, where `rx` is an
-    instace of `AioPipeReader` and `tx` is an instance of `AioPipeWriter`.
+    instance of `AioPipeReader` and `tx` is an instance of `AioPipeWriter`.
     """
 
-    rxFd, txFd = os.pipe()
-    return AioPipeReader(rxFd), AioPipeWriter(txFd)
+    rx, tx = os.pipe()
+    return AioPipeReader(rx), AioPipeWriter(tx)
 
-class AioPipeGuard:
+class AioProcGuard:
     """
     Created by `AioPipeReader` / `AioPipeWriter` for sending one end of a pipe to a child
     process.
     """
 
-    __pdoc__["AioPipeGuard.__init__"] = None
+    __pdoc__["AioProcGuard.__init__"] = None
 
     def __init__(self, stream):
         self._stream = stream
@@ -76,24 +76,49 @@ class AioPipeGuard:
     def __exit__(self, exType, exVal, trace):
         os.close(self._stream._fd)
 
+class AioPipeGuard:
+    """
+    Created by `AioPipeReader` / `AioPipeWriter` for ensuring the associated pipe end is
+    closed after the context is exited.
+    """
+
+    __pdoc__["AioPipeGuard.__init__"] = None
+
+    def __init__(self, stream):
+        self._stream = stream
+
+    async def __aenter__(self):
+        return await self._stream._open()
+
+    async def __aexit__(self, *args):
+        try:
+            os.close(self._stream._fd)
+        except OSError:
+            # The transport/protocol sometimes closes the fd before this is reached.
+            pass
+
 class _AioPipeStream:
     def __init__(self, fd):
         self._fd = fd
 
-    def open(self, eventLoop):
-        raise NotImplementedError
+    def open(self):
+        return AioPipeGuard(self)
 
-    def send(self):
+    async def _open(self):
+        raise NotImplementedError()
+
+    def detach(self):
         """
-        Send this end of the pipe to a child process.
+        Detach this end of the pipe from the current process in preparation for use in a
+        child process.
 
-        This returns an instance of `AioPipeGuard`, which must be used as part of a `with`
+        This returns an instance of `AioProcGuard`, which must be used as part of a `with`
         context. When the context is entered, the stream is prepared for inheritance by
         the child process and returned as the context variable. When the context is exited,
         the stream is closed in the parent process.
         """
 
-        return AioPipeGuard(self)
+        return AioProcGuard(self)
 
 class AioPipeReader(_AioPipeStream):
     """
@@ -102,20 +127,25 @@ class AioPipeReader(_AioPipeStream):
 
     __pdoc__["AioPipeReader.__init__"] = None
 
-    async def open(self, loop=None):
+    def open(self):
         """
-        Open the receive end on the given event loop, returning an instance of
-        [`asyncio.StreamReader`](https://docs.python.org/3/library/asyncio-stream.html#streamreader).
+        Open the receive end on the current event loop, returning an instance of
+        `AioPipeGuard`.
 
-        If no event loop is given, the default one will be used.
+        This object must be used as part of a `with` context. When the context is entered,
+        the receive end is opened and an instance of [`asyncio.StreamReader`][stdlib] is
+        returned as the context variable. When the context is exited, the receive end is
+        closed.
+
+        [stdlib]: https://docs.python.org/3/library/asyncio-stream.html#streamreader
         """
 
-        if loop is None:
-            loop = asyncio.get_event_loop()
+        return super().open()
 
-        rx = StreamReader(loop=loop)
-        _, _ = await loop.connect_read_pipe(
-            lambda: StreamReaderProtocol(rx, loop=loop),
+    async def _open(self):
+        rx = StreamReader()
+        _, _ = await asyncio.get_running_loop().connect_read_pipe(
+            lambda: StreamReaderProtocol(rx),
             os.fdopen(self._fd))
 
         return rx
@@ -127,20 +157,26 @@ class AioPipeWriter(_AioPipeStream):
 
     __pdoc__["AioPipeWriter.__init__"] = None
 
-    async def open(self, loop=None):
+    def open(self):
         """
-        Open the transmit end on the given event loop, returning an instance of
-        [`asyncio.StreamWriter`](https://docs.python.org/3/library/asyncio-stream.html#streamwriter).
+        Open the transmit end on the current event loop, returning an instance of
+        `AioPipeGuard`.
 
-        If no event loop is given, the default one will be used.
+        This object must be used as part of a `with` context. When the context is entered,
+        the transmit end is opened and an instance of [`asyncio.StreamWriter`][stdlib] is
+        returned as the context variable. When the context is exited, the transmit end is
+        closed.
+
+        [stdlib]: https://docs.python.org/3/library/asyncio-stream.html#streamwriter
         """
 
-        if loop is None:
-            loop = asyncio.get_event_loop()
+        return super().open()
 
-        txTransport, txProto = await loop.connect_write_pipe(
-            lambda: StreamReaderProtocol(StreamReader(loop=loop), loop=loop),
+    async def _open(self):
+        rx = StreamReader()
+        transport, proto = await asyncio.get_running_loop().connect_write_pipe(
+            lambda: StreamReaderProtocol(rx),
             os.fdopen(self._fd, "w"))
-        tx = StreamWriter(txTransport, txProto, None, loop)
+        tx = StreamWriter(transport, proto, rx, None)
 
         return tx

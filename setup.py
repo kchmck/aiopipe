@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="aiopipe",
-    version="0.1.3",
+    version="0.2.0",
     description="Multiprocess communication pipe for asyncio",
     author="Mick Koch",
     author_email="mick@kochm.co",
@@ -12,8 +12,7 @@ setup(
     python_requires=">=3.5",
     extras_require={
         "dev": [
-            "pylint~=2.1",
-            "pytest~=3.6",
+            "tox~=3.9",
         ],
     },
     classifiers=[
@@ -23,6 +22,7 @@ setup(
         "Programming Language :: Python :: 3 :: Only",
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
         "License :: OSI Approved :: MIT License",
     ],
     keywords="async asyncio pipe os.pipe",
