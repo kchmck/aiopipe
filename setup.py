@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name="aiopipe",
@@ -8,7 +8,7 @@ setup(
     author_email="mick@kochm.co",
     license="MIT",
     url="https://github.com/kchmck/aiopipe",
-    packages=["aiopipe"],
+    packages=find_packages(),
     python_requires=">=3.5",
     extras_require={
         "dev": [
