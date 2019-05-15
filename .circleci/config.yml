@@ -5,7 +5,7 @@ commands:
       - checkout
       - run: |
           pip install .[dev]
-          tox -e test
+          tox -e py
 jobs:
   build_target:
     docker:
@@ -16,7 +16,7 @@ jobs:
           python setup.py sdist
           python setup.py bdist_wheel
           pip install .[dev]
-          tox -e test,lint
+          tox -e py,lint
       - store_artifacts:
           path: dist
           destination: artifacts
