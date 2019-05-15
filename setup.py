@@ -9,7 +9,7 @@ setup(
     license="MIT",
     url="https://github.com/kchmck/aiopipe",
     packages=find_packages(),
-    python_requires=">=3.5",
+    python_requires="~=3.5",
     extras_require={
         "dev": [
             "tox~=3.9",
