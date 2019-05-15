@@ -34,13 +34,13 @@ end in the parent process:
 ...     return msg
 >>>
 >>> def childproc(tx):
-...     asyncio.run(childtask(tx))
+...     asyncio.new_event_loop().run_until_complete(childtask(tx))
 >>>
 >>> async def childtask(tx):
 ...     async with tx.open() as tx:
 ...         tx.write(b"hi from the child process\\n")
 >>>
->>> asyncio.run(maintask())
+>>> asyncio.new_event_loop().run_until_complete(maintask())
 b'hi from the child process\\n'
 >>>
 ```

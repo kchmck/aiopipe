@@ -41,6 +41,6 @@ def test_mod():
             os.stat(fd)
 
     def childproc(tx):
-        asyncio.run(childtask(tx))
+        asyncio.new_event_loop().run_until_complete(childtask(tx))
 
-    asyncio.run(maintask())
+    asyncio.new_event_loop().run_until_complete(maintask())

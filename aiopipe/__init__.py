@@ -31,13 +31,13 @@ end in the parent process:
 ...     return msg
 >>>
 >>> def childproc(tx):
-...     asyncio.run(childtask(tx))
+...     asyncio.new_event_loop().run_until_complete(childtask(tx))
 >>>
 >>> async def childtask(tx):
 ...     async with tx.open() as tx:
 ...         tx.write(b"hi from the child process\\n")
 >>>
->>> asyncio.run(maintask())
+>>> asyncio.new_event_loop().run_until_complete(maintask())
 b'hi from the child process\\n'
 >>>
 ```
@@ -144,7 +144,7 @@ class AioPipeReader(_AioPipeStream):
 
     async def _open(self):
         rx = StreamReader()
-        _, _ = await asyncio.get_running_loop().connect_read_pipe(
+        _, _ = await asyncio.get_event_loop().connect_read_pipe(
             lambda: StreamReaderProtocol(rx),
             os.fdopen(self._fd))
 
@@ -174,7 +174,7 @@ class AioPipeWriter(_AioPipeStream):
 
     async def _open(self):
         rx = StreamReader()
-        transport, proto = await asyncio.get_running_loop().connect_write_pipe(
+        transport, proto = await asyncio.get_event_loop().connect_write_pipe(
             lambda: StreamReaderProtocol(rx),
             os.fdopen(self._fd, "w"))
         tx = StreamWriter(transport, proto, rx, None)
