@@ -107,7 +107,7 @@ class _AioPipeStream:
     async def _open(self):
         raise NotImplementedError()
 
-    def detach(self):
+    def detach(self) -> AioProcGuard:
         """
         Detach this end of the pipe from the current process in preparation for use in a
         child process.
@@ -127,7 +127,7 @@ class AioPipeReader(_AioPipeStream):
 
     __pdoc__["AioPipeReader.__init__"] = None
 
-    def open(self):
+    def open(self) -> AioPipeGuard:
         """
         Open the receive end on the current event loop, returning an instance of
         `AioPipeGuard`.
@@ -157,7 +157,7 @@ class AioPipeWriter(_AioPipeStream):
 
     __pdoc__["AioPipeWriter.__init__"] = None
 
-    def open(self):
+    def open(self) -> AioPipeGuard:
         """
         Open the transmit end on the current event loop, returning an instance of
         `AioPipeGuard`.
