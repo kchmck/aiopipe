@@ -127,8 +127,7 @@ class AioPipeReader(_AioPipeStream):
 
     __pdoc__["AioPipeReader.__init__"] = None
 
-    def open(self) -> AioPipeGuard:
-        """
+    __pdoc__["AioPipeReader.open"] = """
         Open the receive end on the current event loop, returning an instance of
         `AioPipeGuard`.
 
@@ -138,9 +137,7 @@ class AioPipeReader(_AioPipeStream):
         closed.
 
         [stdlib]: https://docs.python.org/3/library/asyncio-stream.html#streamreader
-        """
-
-        return super().open()
+    """
 
     async def _open(self):
         rx = StreamReader()
@@ -157,8 +154,7 @@ class AioPipeWriter(_AioPipeStream):
 
     __pdoc__["AioPipeWriter.__init__"] = None
 
-    def open(self) -> AioPipeGuard:
-        """
+    __pdoc__["AioPipeWriter.open"] = """
         Open the transmit end on the current event loop, returning an instance of
         `AioPipeGuard`.
 
@@ -168,9 +164,7 @@ class AioPipeWriter(_AioPipeStream):
         closed.
 
         [stdlib]: https://docs.python.org/3/library/asyncio-stream.html#streamwriter
-        """
-
-        return super().open()
+    """
 
     async def _open(self):
         rx = StreamReader()
