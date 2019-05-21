@@ -39,6 +39,35 @@ jobs:
     steps:
       - commonsteps
 
+  build_docs:
+    docker:
+      - image: python:3.7
+    steps:
+      - checkout
+      - run: |
+          pip install .[dev]
+          tox -e docs
+      - persist_to_workspace:
+          root: .
+          paths: docs
+
+  deploy_docs:
+    docker:
+      - image: node:8.10.0
+    steps:
+      - checkout
+      - attach_workspace:
+          at: deploy_docs
+      - run: |
+          npm install -g --silent gh-pages@2.0.1
+          git config user.email "circleci@kochm.co"
+          git config user.name "circleci"
+      - add_ssh_keys:
+          fingerprints:
+            - "35:79:25:19:56:21:b7:e8:86:fe:6e:c4:56:06:37:dc"
+      - run: |
+          gh-pages -m "[skip ci] Update docs" -d deploy_docs
+
 workflows:
   version: 2
   workflow:
@@ -57,3 +86,17 @@ workflows:
               only: master
     jobs:
       - build_latest
+
+  docs:
+    jobs:
+      - build_target
+      - build_docs:
+          requires:
+            - build_target
+      - hold:
+          type: approval
+          requires:
+            - build_docs
+      - deploy_docs:
+          requires:
+            - hold
