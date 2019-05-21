@@ -131,10 +131,10 @@ class AioPipeReader(_AioPipeStream):
         Open the receive end on the current event loop, returning an instance of
         `AioPipeGuard`.
 
-        This object must be used as part of a `with` context. When the context is entered,
-        the receive end is opened and an instance of [`asyncio.StreamReader`][stdlib] is
-        returned as the context variable. When the context is exited, the receive end is
-        closed.
+        This object must be used as part of a `async with` context. When the context is
+        entered, the receive end is opened and an instance of
+        [`asyncio.StreamReader`][stdlib] is returned as the context variable. When the
+        context is exited, the receive end is closed.
 
         [stdlib]: https://docs.python.org/3/library/asyncio-stream.html#streamreader
     """
@@ -158,10 +158,10 @@ class AioPipeWriter(_AioPipeStream):
         Open the transmit end on the current event loop, returning an instance of
         `AioPipeGuard`.
 
-        This object must be used as part of a `with` context. When the context is entered,
-        the transmit end is opened and an instance of [`asyncio.StreamWriter`][stdlib] is
-        returned as the context variable. When the context is exited, the transmit end is
-        closed.
+        This object must be used as part of a `async with` context. When the context is
+        entered, the transmit end is opened and an instance of
+        [`asyncio.StreamWriter`][stdlib] is returned as the context variable. When the
+        context is exited, the transmit end is closed.
 
         [stdlib]: https://docs.python.org/3/library/asyncio-stream.html#streamwriter
     """
