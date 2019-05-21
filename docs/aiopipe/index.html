@@ -1162,10 +1162,10 @@ end in the parent process:</p>
 <span class="s2">        Open the receive end on the current event loop, returning an instance of</span>
 <span class="s2">        `AioPipeGuard`.</span>
 
-<span class="s2">        This object must be used as part of a `with` context. When the context is entered,</span>
-<span class="s2">        the receive end is opened and an instance of [`asyncio.StreamReader`][stdlib] is</span>
-<span class="s2">        returned as the context variable. When the context is exited, the receive end is</span>
-<span class="s2">        closed.</span>
+<span class="s2">        This object must be used as part of a `async with` context. When the context is</span>
+<span class="s2">        entered, the receive end is opened and an instance of</span>
+<span class="s2">        [`asyncio.StreamReader`][stdlib] is returned as the context variable. When the</span>
+<span class="s2">        context is exited, the receive end is closed.</span>
 
 <span class="s2">        [stdlib]: https://docs.python.org/3/library/asyncio-stream.html#streamreader</span>
 <span class="s2">    &quot;&quot;&quot;</span>
@@ -1189,10 +1189,10 @@ end in the parent process:</p>
 <span class="s2">        Open the transmit end on the current event loop, returning an instance of</span>
 <span class="s2">        `AioPipeGuard`.</span>
 
-<span class="s2">        This object must be used as part of a `with` context. When the context is entered,</span>
-<span class="s2">        the transmit end is opened and an instance of [`asyncio.StreamWriter`][stdlib] is</span>
-<span class="s2">        returned as the context variable. When the context is exited, the transmit end is</span>
-<span class="s2">        closed.</span>
+<span class="s2">        This object must be used as part of a `async with` context. When the context is</span>
+<span class="s2">        entered, the transmit end is opened and an instance of</span>
+<span class="s2">        [`asyncio.StreamWriter`][stdlib] is returned as the context variable. When the</span>
+<span class="s2">        context is exited, the transmit end is closed.</span>
 
 <span class="s2">        [stdlib]: https://docs.python.org/3/library/asyncio-stream.html#streamwriter</span>
 <span class="s2">    &quot;&quot;&quot;</span>
@@ -1375,10 +1375,10 @@ closed after the context is exited.</p></div>
 <span class="s2">        Open the receive end on the current event loop, returning an instance of</span>
 <span class="s2">        `AioPipeGuard`.</span>
 
-<span class="s2">        This object must be used as part of a `with` context. When the context is entered,</span>
-<span class="s2">        the receive end is opened and an instance of [`asyncio.StreamReader`][stdlib] is</span>
-<span class="s2">        returned as the context variable. When the context is exited, the receive end is</span>
-<span class="s2">        closed.</span>
+<span class="s2">        This object must be used as part of a `async with` context. When the context is</span>
+<span class="s2">        entered, the receive end is opened and an instance of</span>
+<span class="s2">        [`asyncio.StreamReader`][stdlib] is returned as the context variable. When the</span>
+<span class="s2">        context is exited, the receive end is closed.</span>
 
 <span class="s2">        [stdlib]: https://docs.python.org/3/library/asyncio-stream.html#streamreader</span>
 <span class="s2">    &quot;&quot;&quot;</span>
@@ -1495,10 +1495,10 @@ the stream is closed in the parent process.</p></div>
         
         <div class="desc"><p>Open the receive end on the current event loop, returning an instance of
 <a href="#aiopipe.AioPipeGuard"><code>AioPipeGuard</code></a>.</p>
-<p>This object must be used as part of a <code>with</code> context. When the context is entered,
-the receive end is opened and an instance of <a href="https://docs.python.org/3/library/asyncio-stream.html#streamreader"><code>asyncio.StreamReader</code></a> is
-returned as the context variable. When the context is exited, the receive end is
-closed.</p></div>
+<p>This object must be used as part of a <code>async with</code> context. When the context is
+entered, the receive end is opened and an instance of
+<a href="https://docs.python.org/3/library/asyncio-stream.html#streamreader"><code>asyncio.StreamReader</code></a> is returned as the context variable. When the
+context is exited, the receive end is closed.</p></div>
     
 
 
@@ -1564,10 +1564,10 @@ closed.</p></div>
 <span class="s2">        Open the transmit end on the current event loop, returning an instance of</span>
 <span class="s2">        `AioPipeGuard`.</span>
 
-<span class="s2">        This object must be used as part of a `with` context. When the context is entered,</span>
-<span class="s2">        the transmit end is opened and an instance of [`asyncio.StreamWriter`][stdlib] is</span>
-<span class="s2">        returned as the context variable. When the context is exited, the transmit end is</span>
-<span class="s2">        closed.</span>
+<span class="s2">        This object must be used as part of a `async with` context. When the context is</span>
+<span class="s2">        entered, the transmit end is opened and an instance of</span>
+<span class="s2">        [`asyncio.StreamWriter`][stdlib] is returned as the context variable. When the</span>
+<span class="s2">        context is exited, the transmit end is closed.</span>
 
 <span class="s2">        [stdlib]: https://docs.python.org/3/library/asyncio-stream.html#streamwriter</span>
 <span class="s2">    &quot;&quot;&quot;</span>
@@ -1685,10 +1685,10 @@ the stream is closed in the parent process.</p></div>
         
         <div class="desc"><p>Open the transmit end on the current event loop, returning an instance of
 <a href="#aiopipe.AioPipeGuard"><code>AioPipeGuard</code></a>.</p>
-<p>This object must be used as part of a <code>with</code> context. When the context is entered,
-the transmit end is opened and an instance of <a href="https://docs.python.org/3/library/asyncio-stream.html#streamwriter"><code>asyncio.StreamWriter</code></a> is
-returned as the context variable. When the context is exited, the transmit end is
-closed.</p></div>
+<p>This object must be used as part of a <code>async with</code> context. When the context is
+entered, the transmit end is opened and an instance of
+<a href="https://docs.python.org/3/library/asyncio-stream.html#streamwriter"><code>asyncio.StreamWriter</code></a> is returned as the context variable. When the
+context is exited, the transmit end is closed.</p></div>
     
 
 
