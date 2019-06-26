@@ -86,13 +86,17 @@ class AioPipeGuard:
 
     def __init__(self, stream):
         self._stream = stream
+        self._transport = None
 
     async def __aenter__(self):
-        return await self._stream._open()
+        transport, stream = await self._stream._open()
+        self._transport = transport
+
+        return stream
 
     async def __aexit__(self, *args):
         try:
-            os.close(self._stream._fd)
+            self._transport.close()
         except OSError:
             # The transport/protocol sometimes closes the fd before this is reached.
             pass
@@ -141,11 +145,11 @@ class AioPipeReader(_AioPipeStream):
 
     async def _open(self):
         rx = StreamReader()
-        _, _ = await asyncio.get_event_loop().connect_read_pipe(
+        transport, _ = await asyncio.get_event_loop().connect_read_pipe(
             lambda: StreamReaderProtocol(rx),
             os.fdopen(self._fd))
 
-        return rx
+        return transport, rx
 
 class AioPipeWriter(_AioPipeStream):
     """
@@ -173,4 +177,4 @@ class AioPipeWriter(_AioPipeStream):
             os.fdopen(self._fd, "w"))
         tx = StreamWriter(transport, proto, rx, None)
 
-        return tx
+        return transport, tx

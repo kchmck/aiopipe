@@ -25,6 +25,9 @@ def test_mod():
         proc.join()
         assert proc.exitcode == 0
 
+        # Allow execution of cleanup tasks.
+        await asyncio.sleep(0)
+
         # Ensure fd is closed.
         with pytest.raises(OSError):
             os.stat(fd)
@@ -35,6 +38,9 @@ def test_mod():
         fd = tx._fd
         async with tx.open() as tx:
             tx.write(b"hi from child process\n")
+
+        # Allow execution of cleanup tasks.
+        await asyncio.sleep(0)
 
         # Ensure fd is closed.
         with pytest.raises(OSError):
