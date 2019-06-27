@@ -124,6 +124,12 @@ class _AioPipeStream:
 
         return AioProcGuard(self)
 
+    def __del__(self):
+        try:
+            os.close(self._fd)
+        except OSError:
+            pass
+
 class AioPipeReader(_AioPipeStream):
     """
     The read end of a pipe.
