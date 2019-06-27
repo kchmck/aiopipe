@@ -45,6 +45,7 @@ b'hi from the child process\\n'
 
 from asyncio import StreamReader, StreamWriter, StreamReaderProtocol, get_running_loop
 from contextlib import contextmanager, asynccontextmanager
+from typing import Tuple
 import os
 
 __pdoc__ = {}
@@ -156,3 +157,42 @@ class AioPipeWriter(_AioPipeStream):
         tx = StreamWriter(transport, proto, rx, None)
 
         return transport, tx
+
+class AioDuplexConnection:
+    def __init__(self, rx: StreamReader, tx: StreamWriter):
+        self._rx = rx
+        self._tx = tx
+
+    def reader(self) -> StreamReader:
+        return self._rx
+
+    def writer(self) -> StreamWriter:
+        return self._tx
+
+    async def write(self, buf: bytes):
+        self._tx.write(buf)
+        await self._tx.drain()
+
+    async def read(self, n=-1) -> bytes:
+        return await self._rx.read(n)
+
+class AioDuplex:
+    def __init__(self, rx: AioPipeReader, tx: AioPipeWriter):
+        self._rx = rx
+        self._tx = tx
+
+    @contextmanager
+    def detach(self) -> "AioDuplex":
+        with self._rx.detach(), self._tx.detach():
+            yield self
+
+    @asynccontextmanager
+    async def open(self) -> AioDuplexConnection:
+        async with self._rx.open() as rx, self._tx.open() as tx:
+            yield AioDuplexConnection(rx, tx)
+
+def aioduplex() -> Tuple[AioDuplex, AioDuplex]:
+    rxa, txa = aiopipe()
+    rxb, txb = aiopipe()
+
+    return AioDuplex(rxa, txb), AioDuplex(rxb, txa)
