@@ -43,8 +43,7 @@ b'hi from the child process\\n'
 ```
 """
 
-from asyncio import StreamReader, StreamWriter, StreamReaderProtocol
-import asyncio
+from asyncio import StreamReader, StreamWriter, StreamReaderProtocol, get_event_loop
 import os
 
 __pdoc__ = {}
@@ -151,7 +150,7 @@ class AioPipeReader(_AioPipeStream):
 
     async def _open(self):
         rx = StreamReader()
-        transport, _ = await asyncio.get_event_loop().connect_read_pipe(
+        transport, _ = await get_event_loop().connect_read_pipe(
             lambda: StreamReaderProtocol(rx),
             os.fdopen(self._fd))
 
@@ -178,7 +177,7 @@ class AioPipeWriter(_AioPipeStream):
 
     async def _open(self):
         rx = StreamReader()
-        transport, proto = await asyncio.get_event_loop().connect_write_pipe(
+        transport, proto = await get_event_loop().connect_write_pipe(
             lambda: StreamReaderProtocol(rx),
             os.fdopen(self._fd, "w"))
         tx = StreamWriter(transport, proto, rx, None)
