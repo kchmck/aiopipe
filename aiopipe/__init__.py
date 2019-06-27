@@ -44,7 +44,7 @@ b'hi from the child process\\n'
 """
 
 from asyncio import StreamReader, StreamWriter, StreamReaderProtocol, get_event_loop
-from contextlib import contextmanager
+from contextlib import contextmanager, asynccontextmanager
 import os
 
 __pdoc__ = {}
@@ -58,37 +58,22 @@ def aiopipe():
     rx, tx = os.pipe()
     return AioPipeReader(rx), AioPipeWriter(tx)
 
-class AioPipeGuard:
-    """
-    Created by `AioPipeReader` / `AioPipeWriter` for ensuring the associated pipe end is
-    closed after the context is exited.
-    """
-
-    __pdoc__["AioPipeGuard.__init__"] = None
-
-    def __init__(self, stream):
-        self._stream = stream
-        self._transport = None
-
-    async def __aenter__(self):
-        transport, stream = await self._stream._open()
-        self._transport = transport
-
-        return stream
-
-    async def __aexit__(self, *args):
-        try:
-            self._transport.close()
-        except OSError:
-            # The transport/protocol sometimes closes the fd before this is reached.
-            pass
-
 class _AioPipeStream:
     def __init__(self, fd):
         self._fd = fd
 
-    def open(self):
-        return AioPipeGuard(self)
+    @asynccontextmanager
+    async def open(self):
+        transport, stream = await self._open()
+
+        try:
+            yield stream
+        finally:
+            try:
+                transport.close()
+            except OSError:
+                # The transport/protocol sometimes closes the fd before this is reached.
+                pass
 
     async def _open(self):
         raise NotImplementedError()

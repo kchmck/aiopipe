@@ -21,18 +21,6 @@ jobs:
           path: dist
           destination: artifacts
 
-  build_35:
-    docker:
-      - image: python:3.5
-    steps:
-      - commonsteps
-
-  build_36:
-    docker:
-      - image: python:3.6
-    steps:
-      - commonsteps
-
   build_latest:
     docker:
       - image: python:latest
@@ -73,8 +61,6 @@ workflows:
   workflow:
     jobs:
       - build_target
-      - build_35
-      - build_36
       - build_latest
 
   check_latest:
