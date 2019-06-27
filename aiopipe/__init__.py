@@ -44,6 +44,7 @@ b'hi from the child process\\n'
 """
 
 from asyncio import StreamReader, StreamWriter, StreamReaderProtocol, get_event_loop
+from contextlib import contextmanager
 import os
 
 __pdoc__ = {}
@@ -56,24 +57,6 @@ def aiopipe():
 
     rx, tx = os.pipe()
     return AioPipeReader(rx), AioPipeWriter(tx)
-
-class AioProcGuard:
-    """
-    Created by `AioPipeReader` / `AioPipeWriter` for sending one end of a pipe to a child
-    process.
-    """
-
-    __pdoc__["AioProcGuard.__init__"] = None
-
-    def __init__(self, stream):
-        self._stream = stream
-
-    def __enter__(self):
-        os.set_inheritable(self._stream._fd, True)
-        return self._stream
-
-    def __exit__(self, exType, exVal, trace):
-        os.close(self._stream._fd)
 
 class AioPipeGuard:
     """
@@ -110,18 +93,23 @@ class _AioPipeStream:
     async def _open(self):
         raise NotImplementedError()
 
-    def detach(self) -> AioProcGuard:
+    @contextmanager
+    def detach(self):
         """
         Detach this end of the pipe from the current process in preparation for use in a
         child process.
 
-        This returns an instance of `AioProcGuard`, which must be used as part of a `with`
-        context. When the context is entered, the stream is prepared for inheritance by
-        the child process and returned as the context variable. When the context is exited,
-        the stream is closed in the parent process.
+        This returns a context manager, which must be used as part of a `with` context.
+        When the context is entered, the stream is prepared for inheritance by the child
+        process and returned as the context variable. When the context is exited, the
+        stream is closed in the parent process.
         """
 
-        return AioProcGuard(self)
+        try:
+            os.set_inheritable(self._fd, True)
+            yield self
+        finally:
+            os.close(self._fd)
 
     def __del__(self):
         try:
