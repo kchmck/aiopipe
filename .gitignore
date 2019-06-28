@@ -1,7 +1,8 @@
+/.venv
+/.cache
+/.tox
+/build
+/dist
+/docs
 __pycache__
-.venv
-.cache
-dist
 *.egg-info
-.tox
-build
