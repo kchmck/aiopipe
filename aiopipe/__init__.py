@@ -184,7 +184,7 @@ class AioDuplexConnection:
         self._tx.write(buf)
         await self._tx.drain()
 
-    async def read(self, n=-1) -> bytes:
+    async def read(self, n: int = -1) -> bytes:
         return await self._rx.read(n)
 
 class AioDuplex:
