@@ -5,6 +5,19 @@ import pytest
 
 from aiopipe import aiopipe, aioduplex
 
+def test_closed():
+    def openpipe():
+        rx, tx = aiopipe()
+        return rx._fd, tx._fd
+
+    rfd, tfd = openpipe()
+
+    with pytest.raises(OSError):
+        os.stat(rfd)
+
+    with pytest.raises(OSError):
+        os.stat(tfd)
+
 def test_simplex():
     async def maintask():
         rx, tx = aiopipe()

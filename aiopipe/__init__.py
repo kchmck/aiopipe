@@ -62,10 +62,18 @@ def aiopipe():
 class _AioPipeStream:
     def __init__(self, fd):
         self._fd = fd
+        self._moved = False
+        """
+        Tracks if the fd is controlled by asyncio.
+
+        This object will only close the fd if it's not controlled by asyncio. Otherwise,
+        asyncio throws an error when it tries to close the fd itself.
+        """
 
     @asynccontextmanager
     async def open(self):
         transport, stream = await self._open()
+        self._moved = True
 
         try:
             yield stream
@@ -98,6 +106,9 @@ class _AioPipeStream:
             os.close(self._fd)
 
     def __del__(self):
+        if self._moved:
+            return
+
         try:
             os.close(self._fd)
         except OSError:
