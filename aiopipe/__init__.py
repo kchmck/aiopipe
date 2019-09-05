@@ -43,23 +43,40 @@ b'hi from the child process\\n'
 ```
 """
 
-from asyncio import StreamReader, StreamWriter, StreamReaderProtocol, get_running_loop
+from asyncio import StreamReader, StreamWriter, StreamReaderProtocol, BaseTransport, \
+        get_running_loop
 from contextlib import contextmanager, asynccontextmanager
-from typing import Tuple
+from typing import Tuple, Any, ContextManager, AsyncContextManager
 import os
 
 __pdoc__ = {}
 
-def aiopipe():
+def aiopipe() -> Tuple["AioPipeReader", "AioPipeWriter"]:
     """
-    Create a new multiprocess communication pipe, returning `(rx, tx)`, where `rx` is an
-    instance of `AioPipeReader` and `tx` is an instance of `AioPipeWriter`.
+    Create a new simplex multiprocess communication pipe, returning the read end and the
+    write end.
     """
 
     rx, tx = os.pipe()
     return AioPipeReader(rx), AioPipeWriter(tx)
 
-class _AioPipeStream:
+def aioduplex() -> Tuple["AioDuplex", "AioDuplex"]:
+    """
+    Create a new full-duplex multiprocess communication pipe.
+    """
+
+    rxa, txa = aiopipe()
+    rxb, txb = aiopipe()
+
+    return AioDuplex(rxa, txb), AioDuplex(rxb, txa)
+
+class AioPipeStream:
+    """
+    Abstract class for pipe readers and writers.
+    """
+
+    __pdoc__["AioPipeStream.__init__"] = None
+
     def __init__(self, fd):
         self._fd = fd
         self._moved = False
@@ -71,7 +88,7 @@ class _AioPipeStream:
         """
 
     @asynccontextmanager
-    async def open(self):
+    async def open(self) -> AsyncContextManager[Any]:
         transport, stream = await self._open()
         self._moved = True
 
@@ -84,11 +101,11 @@ class _AioPipeStream:
                 # The transport/protocol sometimes closes the fd before this is reached.
                 pass
 
-    async def _open(self):
+    async def _open(self) -> Tuple[BaseTransport, Any]:
         raise NotImplementedError()
 
     @contextmanager
-    def detach(self):
+    def detach(self) -> ContextManager["AioPipeStream"]:
         """
         Detach this end of the pipe from the current process in preparation for use in a
         child process.
@@ -114,20 +131,17 @@ class _AioPipeStream:
         except OSError:
             pass
 
-class AioPipeReader(_AioPipeStream):
+class AioPipeReader(AioPipeStream):
     """
     The read end of a pipe.
     """
 
-    __pdoc__["AioPipeReader.__init__"] = None
-
     __pdoc__["AioPipeReader.open"] = """
-        Open the receive end on the current event loop, returning an instance of
-        `AioPipeGuard`.
+        Open the receive end on the current event loop.
 
-        This object must be used as part of a `async with` context. When the context is
-        entered, the receive end is opened and an instance of
-        [`asyncio.StreamReader`][stdlib] is returned as the context variable. When the
+        This returns an async context manager, which must be used as part of an `async
+        with` context. When the context is entered, the receive end is opened and an
+        instance of [`StreamReader`][stdlib] is returned as the context variable. When the
         context is exited, the receive end is closed.
 
         [stdlib]: https://docs.python.org/3/library/asyncio-stream.html#streamreader
@@ -141,20 +155,17 @@ class AioPipeReader(_AioPipeStream):
 
         return transport, rx
 
-class AioPipeWriter(_AioPipeStream):
+class AioPipeWriter(AioPipeStream):
     """
     The write end of a pipe.
     """
 
-    __pdoc__["AioPipeWriter.__init__"] = None
-
     __pdoc__["AioPipeWriter.open"] = """
-        Open the transmit end on the current event loop, returning an instance of
-        `AioPipeGuard`.
+        Open the transmit end on the current event loop.
 
-        This object must be used as part of a `async with` context. When the context is
-        entered, the transmit end is opened and an instance of
-        [`asyncio.StreamWriter`][stdlib] is returned as the context variable. When the
+        This returns an async context manager, which must be used as part of an `async
+        with` context. When the context is entered, the transmit end is opened and an
+        instance of [`StreamWriter`][stdlib] is returned as the context variable. When the
         context is exited, the transmit end is closed.
 
         [stdlib]: https://docs.python.org/3/library/asyncio-stream.html#streamwriter
@@ -170,40 +181,89 @@ class AioPipeWriter(_AioPipeStream):
         return transport, tx
 
 class AioDuplexConnection:
+    """
+    Represents one end of an opened duplex pipe.
+    """
+
+    __pdoc__["AioDuplexConnection.__init__"] = None
+
     def __init__(self, rx: StreamReader, tx: StreamWriter):
         self._rx = rx
         self._tx = tx
 
     def reader(self) -> StreamReader:
+        """
+        Retrieve the underlying reader instance.
+        """
+
         return self._rx
 
     def writer(self) -> StreamWriter:
+        """
+        Retrieve the underlying writer instance.
+        """
+
         return self._tx
 
     async def write(self, buf: bytes):
+        """
+        Write the given bytes and wait for the stream to be drained.
+
+        This is a convenience method, see
+        [`StreamWriter.write()`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter.write)
+        for more information.
+        """
+
         self._tx.write(buf)
         await self._tx.drain()
 
     async def read(self, n: int = -1) -> bytes:
+        """
+        Read the given number of bytes.
+
+        This is a convenience method, see
+        [`StreamReader.read()`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamReader.read)
+        for more information.
+        """
+
         return await self._rx.read(n)
 
 class AioDuplex:
+    """
+    Represents one end of a duplex pipe,
+    """
+
+    __pdoc__["AioDuplex.__init__"] = None
+
     def __init__(self, rx: AioPipeReader, tx: AioPipeWriter):
         self._rx = rx
         self._tx = tx
 
     @contextmanager
-    def detach(self) -> "AioDuplex":
+    def detach(self) -> ContextManager["AioDuplex"]:
+        """
+        Detach this end of the duplex pipe from the current process in preparation for use
+        in a child process.
+
+        This returns a context manager, which must be used as part of a `with` context.
+        When the context is entered, the pipe is prepared for inheritance by the child
+        process and returned as the context variable. When the context is exited, the
+        stream is closed in the parent process.
+        """
+
         with self._rx.detach(), self._tx.detach():
             yield self
 
     @asynccontextmanager
-    async def open(self) -> AioDuplexConnection:
+    async def open(self) -> AsyncContextManager[AioDuplexConnection]:
+        """"
+        Open this end of the duplex pipe on the current event loop.
+
+        This returns an async context manager, which must be used as part of an `async
+        with` context. When the context is entered, the pipe is opened and an instance of
+        `AioDuplexConnection` is returned as the context variable. When the context is
+        exited, the pipe is closed.
+        """
+
         async with self._rx.open() as rx, self._tx.open() as tx:
             yield AioDuplexConnection(rx, tx)
-
-def aioduplex() -> Tuple[AioDuplex, AioDuplex]:
-    rxa, txa = aiopipe()
-    rxb, txb = aiopipe()
-
-    return AioDuplex(rxa, txb), AioDuplex(rxb, txa)
