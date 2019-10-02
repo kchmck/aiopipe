@@ -1,12 +1,13 @@
 """
 This package wraps the [`os.pipe`](https://docs.python.org/3/library/os.html#os.pipe)
 simplex communication pipe so it can be used as part of the non-blocking
-[`asyncio`](https://docs.python.org/3/library/asyncio.html) event loop.
+[`asyncio`](https://docs.python.org/3/library/asyncio.html) event loop. A duplex pipe
+is also provided, which allows reading and writing on both ends.
 
-#### Example
+## Simplex example
 
 The following example opens a pipe with the write end in the child process and the read
-end in the parent process:
+end in the parent process.
 
 ```python3
 >>> from multiprocessing import Process
@@ -14,7 +15,7 @@ end in the parent process:
 >>>
 >>> from aiopipe import aiopipe
 >>>
->>> async def maintask():
+>>> async def main():
 ...     rx, tx = aiopipe()
 ...
 ...     with tx.detach() as tx:
@@ -31,14 +32,57 @@ end in the parent process:
 ...     return msg
 >>>
 >>> def childproc(tx):
-...     asyncio.new_event_loop().run_until_complete(childtask(tx))
+...     asyncio.run(childtask(tx))
 >>>
 >>> async def childtask(tx):
 ...     async with tx.open() as tx:
 ...         tx.write(b"hi from the child process\\n")
 >>>
->>> asyncio.run(maintask())
+>>> asyncio.run(main())
 b'hi from the child process\\n'
+>>>
+```
+
+## Duplex example
+
+The following example shows a parent and child process sharing a duplex pipe to exchange
+messages.
+
+```python3
+>>> from multiprocessing import Process
+>>> import asyncio
+>>>
+>>> from aiopipe import aioduplex
+>>>
+>>> async def main():
+...     mainpipe, chpipe = aioduplex()
+...
+...     with chpipe.detach() as tx:
+...         proc = Process(target=childproc, args=(chpipe,))
+...         proc.start()
+...
+...     # The second pipe is now available in the child process
+...     # and detached from the parent process.
+...
+...     async with mainpipe.open() as mainpipe:
+...         req = await mainpipe.read(5)
+...         await mainpipe.write(req + b" world\\n")
+...         msg = await mainpipe.reader().readline()
+...
+...     proc.join()
+...     return msg
+>>>
+>>> def childproc(pipe):
+...     asyncio.run(childtask(pipe))
+>>>
+>>> async def childtask(pipe):
+...     async with pipe.open() as pipe:
+...         await pipe.write(b"hello")
+...         rep = await pipe.reader().readline()
+...         await pipe.write(rep.upper())
+>>>
+>>> asyncio.run(main())
+b'HELLO WORLD\\n'
 >>>
 ```
 """
@@ -53,8 +97,9 @@ __pdoc__ = {}
 
 def aiopipe() -> Tuple["AioPipeReader", "AioPipeWriter"]:
     """
-    Create a new simplex multiprocess communication pipe, returning the read end and the
-    write end.
+    Create a new simplex multiprocess communication pipe.
+
+    Return the read end and write end, respectively.
     """
 
     rx, tx = os.pipe()
@@ -62,7 +107,9 @@ def aiopipe() -> Tuple["AioPipeReader", "AioPipeWriter"]:
 
 def aioduplex() -> Tuple["AioDuplex", "AioDuplex"]:
     """
-    Create a new full-duplex multiprocess communication pipe.
+    Create a new duplex multiprocess communication pipe.
+
+    Both returned pipes can write to and read from the other.
     """
 
     rxa, txa = aiopipe()
@@ -76,6 +123,7 @@ class AioPipeStream:
     """
 
     __pdoc__["AioPipeStream.__init__"] = None
+    __pdoc__["AioPipeStream.open"] = None
 
     def __init__(self, fd):
         self._fd = fd
@@ -88,7 +136,7 @@ class AioPipeStream:
         """
 
     @asynccontextmanager
-    async def open(self) -> AsyncContextManager[Any]:
+    async def open(self):
         transport, stream = await self._open()
         self._moved = True
 
@@ -111,9 +159,10 @@ class AioPipeStream:
         child process.
 
         This returns a context manager, which must be used as part of a `with` context.
-        When the context is entered, the stream is prepared for inheritance by the child
-        process and returned as the context variable. When the context is exited, the
-        stream is closed in the parent process.
+        When the context is entered, the stream is prepared for
+        [inheritance](https://docs.python.org/3/library/os.html#fd-inheritance) by the
+        child process and returned as the context variable. When the context is exited,
+        the stream is closed in the parent process.
         """
 
         try:
@@ -136,6 +185,7 @@ class AioPipeReader(AioPipeStream):
     The read end of a pipe.
     """
 
+    __pdoc__["AioPipeReader.__init__"] = None
     __pdoc__["AioPipeReader.open"] = """
         Open the receive end on the current event loop.
 
@@ -144,7 +194,7 @@ class AioPipeReader(AioPipeStream):
         instance of [`StreamReader`][stdlib] is returned as the context variable. When the
         context is exited, the receive end is closed.
 
-        [stdlib]: https://docs.python.org/3/library/asyncio-stream.html#streamreader
+        [stdlib]: https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamReader
     """
 
     async def _open(self):
@@ -160,6 +210,7 @@ class AioPipeWriter(AioPipeStream):
     The write end of a pipe.
     """
 
+    __pdoc__["AioPipeWriter.__init__"] = None
     __pdoc__["AioPipeWriter.open"] = """
         Open the transmit end on the current event loop.
 
@@ -168,7 +219,7 @@ class AioPipeWriter(AioPipeStream):
         instance of [`StreamWriter`][stdlib] is returned as the context variable. When the
         context is exited, the transmit end is closed.
 
-        [stdlib]: https://docs.python.org/3/library/asyncio-stream.html#streamwriter
+        [stdlib]: https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter
     """
 
     async def _open(self):
@@ -193,14 +244,22 @@ class AioDuplexConnection:
 
     def reader(self) -> StreamReader:
         """
-        Retrieve the underlying reader instance.
+        Retrieve the underlying
+        [`StreamReader`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamReader)
+        instance.
+
+        This allows access to methods like `readline()`, `readuntil()`, etc.
         """
 
         return self._rx
 
     def writer(self) -> StreamWriter:
         """
-        Retrieve the underlying writer instance.
+        Retrieve the underlying
+        [`StreamWriter`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter)
+        instance.
+
+        This allows access to methods like `writelines()`, `drain()`, etc.
         """
 
         return self._tx
@@ -209,9 +268,10 @@ class AioDuplexConnection:
         """
         Write the given bytes and wait for the stream to be drained.
 
-        This is a convenience method, see
-        [`StreamWriter.write()`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter.write)
-        for more information.
+        This is a convenience method, see [`StreamWriter.write()`][write] for more
+        information.
+
+        [write]: https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter.write
         """
 
         self._tx.write(buf)
@@ -221,9 +281,10 @@ class AioDuplexConnection:
         """
         Read the given number of bytes.
 
-        This is a convenience method, see
-        [`StreamReader.read()`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamReader.read)
-        for more information.
+        This is a convenience method, see [`StreamReader.read()`][read] for more
+        information.
+
+        [read]: https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamReader.read
         """
 
         return await self._rx.read(n)
@@ -246,17 +307,18 @@ class AioDuplex:
         in a child process.
 
         This returns a context manager, which must be used as part of a `with` context.
-        When the context is entered, the pipe is prepared for inheritance by the child
-        process and returned as the context variable. When the context is exited, the
-        stream is closed in the parent process.
+        When the context is entered, the pipe is prepared for
+        [inheritance](https://docs.python.org/3/library/os.html#fd-inheritance) by the
+        child process and returned as the context variable. When the context is exited,
+        the stream is closed in the parent process.
         """
 
         with self._rx.detach(), self._tx.detach():
             yield self
 
     @asynccontextmanager
-    async def open(self) -> AsyncContextManager[AioDuplexConnection]:
-        """"
+    async def open(self) -> AsyncContextManager["AioDuplexConnection"]:
+        """
         Open this end of the duplex pipe on the current event loop.
 
         This returns an async context manager, which must be used as part of an `async
