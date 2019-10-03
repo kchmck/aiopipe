@@ -68,10 +68,10 @@ messages.
 ...     # The second pipe is now available in the child process
 ...     # and detached from the parent process.
 ...
-...     async with mainpipe.open() as mainpipe:
-...         req = await mainpipe.read(5)
-...         await mainpipe.write(req + b" world\n")
-...         msg = await mainpipe.reader().readline()
+...     async with mainpipe.open() as (rx, tx):
+...         req = await rx.read(5)
+...         tx.write(req + b" world\n")
+...         msg = await rx.readline()
 ...
 ...     proc.join()
 ...     return msg
@@ -80,10 +80,10 @@ messages.
 ...     asyncio.run(childtask(pipe))
 >>>
 >>> async def childtask(pipe):
-...     async with pipe.open() as pipe:
-...         await pipe.write(b"hello")
-...         rep = await pipe.reader().readline()
-...         await pipe.write(rep.upper())
+...     async with pipe.open() as (rx, tx):
+...         tx.write(b"hello")
+...         rep = await rx.readline()
+...         tx.write(rep.upper())
 >>>
 >>> asyncio.run(main())
 b'HELLO WORLD\n'

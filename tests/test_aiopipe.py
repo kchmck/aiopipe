@@ -128,9 +128,9 @@ def test_duplex():
                 os.stat(fd)
 
         fds = [pa._rx._fd, pa._tx._fd]
-        async with pa.open() as pipe:
-            await pipe.write(b"abc")
-            msg = await pipe.read(6)
+        async with pa.open() as (rx, tx):
+            tx.write(b"abc")
+            msg = await rx.read(6)
 
         proc.join()
         assert proc.exitcode == 0
@@ -146,9 +146,9 @@ def test_duplex():
 
     async def childtask(pipe):
         fds = [pipe._rx._fd, pipe._tx._fd]
-        async with pipe.open() as pipe:
-            msg = await pipe.read(3)
-            await pipe.write(msg + b"def")
+        async with pipe.open() as (rx, tx):
+            msg = await rx.read(3)
+            tx.write(msg + b"def")
 
         # Allow execution of cleanup tasks.
         await asyncio.sleep(0)

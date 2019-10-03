@@ -64,10 +64,10 @@ messages.
 ...     # The second pipe is now available in the child process
 ...     # and detached from the parent process.
 ...
-...     async with mainpipe.open() as mainpipe:
-...         req = await mainpipe.read(5)
-...         await mainpipe.write(req + b" world\\n")
-...         msg = await mainpipe.reader().readline()
+...     async with mainpipe.open() as (rx, tx):
+...         req = await rx.read(5)
+...         tx.write(req + b" world\\n")
+...         msg = await rx.readline()
 ...
 ...     proc.join()
 ...     return msg
@@ -76,10 +76,10 @@ messages.
 ...     asyncio.run(childtask(pipe))
 >>>
 >>> async def childtask(pipe):
-...     async with pipe.open() as pipe:
-...         await pipe.write(b"hello")
-...         rep = await pipe.reader().readline()
-...         await pipe.write(rep.upper())
+...     async with pipe.open() as (rx, tx):
+...         tx.write(b"hello")
+...         rep = await rx.readline()
+...         tx.write(rep.upper())
 >>>
 >>> asyncio.run(main())
 b'HELLO WORLD\\n'
@@ -231,64 +231,6 @@ class AioPipeWriter(AioPipeStream):
 
         return transport, tx
 
-class AioDuplexConnection:
-    """
-    Represents one end of an opened duplex pipe.
-    """
-
-    __pdoc__["AioDuplexConnection.__init__"] = None
-
-    def __init__(self, rx: StreamReader, tx: StreamWriter):
-        self._rx = rx
-        self._tx = tx
-
-    def reader(self) -> StreamReader:
-        """
-        Retrieve the underlying
-        [`StreamReader`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamReader)
-        instance.
-
-        This allows access to methods like `readline()`, `readuntil()`, etc.
-        """
-
-        return self._rx
-
-    def writer(self) -> StreamWriter:
-        """
-        Retrieve the underlying
-        [`StreamWriter`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter)
-        instance.
-
-        This allows access to methods like `writelines()`, `drain()`, etc.
-        """
-
-        return self._tx
-
-    async def write(self, buf: bytes):
-        """
-        Write the given bytes and wait for the stream to be drained.
-
-        This is a convenience method, see [`StreamWriter.write()`][write] for more
-        information.
-
-        [write]: https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter.write
-        """
-
-        self._tx.write(buf)
-        await self._tx.drain()
-
-    async def read(self, n: int = -1) -> bytes:
-        """
-        Read the given number of bytes.
-
-        This is a convenience method, see [`StreamReader.read()`][read] for more
-        information.
-
-        [read]: https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamReader.read
-        """
-
-        return await self._rx.read(n)
-
 class AioDuplex:
     """
     Represents one end of a duplex pipe,
@@ -317,15 +259,18 @@ class AioDuplex:
             yield self
 
     @asynccontextmanager
-    async def open(self) -> AsyncContextManager["AioDuplexConnection"]:
+    async def open(self) -> AsyncContextManager[Tuple[StreamReader, StreamWriter]]:
         """
         Open this end of the duplex pipe on the current event loop.
 
         This returns an async context manager, which must be used as part of an `async
-        with` context. When the context is entered, the pipe is opened and an instance of
-        `AioDuplexConnection` is returned as the context variable. When the context is
-        exited, the pipe is closed.
+        with` context. When the context is entered, the pipe is opened and the underlying
+        [`StreamReader`][reader] and [`StreamWriter`][writer] are returned as the context
+        variable. When the context is exited, the pipe is closed.
+
+        [reader]: https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamReader
+        [writer]: https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter
         """
 
         async with self._rx.open() as rx, self._tx.open() as tx:
-            yield AioDuplexConnection(rx, tx)
+            yield rx, tx
