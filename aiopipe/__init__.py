@@ -259,7 +259,7 @@ class AioDuplex:
             yield self
 
     @asynccontextmanager
-    async def open(self) -> AsyncContextManager[Tuple[StreamReader, StreamWriter]]:
+    async def open(self) -> AsyncContextManager[Tuple["StreamReader", "StreamWriter"]]:
         """
         Open this end of the duplex pipe on the current event loop.
 
