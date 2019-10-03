@@ -914,24 +914,6 @@ main {
                 </li>
             
                 <li>
-                    <a href="#aiopipe.AioDuplexConnection" title="aiopipe.AioDuplexConnection">AioDuplexConnection</a>
-                    
-                    
-                        <ul class="objlist">
-    
-        <li><a href="#aiopipe.AioDuplexConnection.read" title="aiopipe.AioDuplexConnection.read">read</a></lI>
-    
-        <li><a href="#aiopipe.AioDuplexConnection.reader" title="aiopipe.AioDuplexConnection.reader">reader</a></lI>
-    
-        <li><a href="#aiopipe.AioDuplexConnection.write" title="aiopipe.AioDuplexConnection.write">write</a></lI>
-    
-        <li><a href="#aiopipe.AioDuplexConnection.writer" title="aiopipe.AioDuplexConnection.writer">writer</a></lI>
-    
-    </ul>
-                    
-                </li>
-            
-                <li>
                     <a href="#aiopipe.AioPipeReader" title="aiopipe.AioPipeReader">AioPipeReader</a>
                     
                     
@@ -1050,17 +1032,17 @@ messages.</p>
 <span class="o">&gt;&gt;&gt;</span> <span class="k">async</span> <span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
 <span class="o">...</span>     <span class="n">mainpipe</span><span class="p">,</span> <span class="n">chpipe</span> <span class="o">=</span> <span class="n">aioduplex</span><span class="p">()</span>
 <span class="o">...</span>
-<span class="o">...</span>     <span class="k">with</span> <span class="n">chpipe</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span> <span class="k">as</span> <span class="n">tx</span><span class="p">:</span>
+<span class="o">...</span>     <span class="k">with</span> <span class="n">chpipe</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span> <span class="k">as</span> <span class="n">chpipe</span><span class="p">:</span>
 <span class="o">...</span>         <span class="n">proc</span> <span class="o">=</span> <span class="n">Process</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">childproc</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">chpipe</span><span class="p">,))</span>
 <span class="o">...</span>         <span class="n">proc</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
 <span class="o">...</span>
 <span class="o">...</span>     <span class="c1"># The second pipe is now available in the child process</span>
 <span class="o">...</span>     <span class="c1"># and detached from the parent process.</span>
 <span class="o">...</span>
-<span class="o">...</span>     <span class="k">async</span> <span class="k">with</span> <span class="n">mainpipe</span><span class="o">.</span><span class="n">open</span><span class="p">()</span> <span class="k">as</span> <span class="n">mainpipe</span><span class="p">:</span>
-<span class="o">...</span>         <span class="n">req</span> <span class="o">=</span> <span class="k">await</span> <span class="n">mainpipe</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
-<span class="o">...</span>         <span class="k">await</span> <span class="n">mainpipe</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">req</span> <span class="o">+</span> <span class="sa">b</span><span class="s2">&quot; world</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="o">...</span>         <span class="n">msg</span> <span class="o">=</span> <span class="k">await</span> <span class="n">mainpipe</span><span class="o">.</span><span class="n">reader</span><span class="p">()</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+<span class="o">...</span>     <span class="k">async</span> <span class="k">with</span> <span class="n">mainpipe</span><span class="o">.</span><span class="n">open</span><span class="p">()</span> <span class="k">as</span> <span class="p">(</span><span class="n">rx</span><span class="p">,</span> <span class="n">tx</span><span class="p">):</span>
+<span class="o">...</span>         <span class="n">req</span> <span class="o">=</span> <span class="k">await</span> <span class="n">rx</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="o">...</span>         <span class="n">tx</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">req</span> <span class="o">+</span> <span class="sa">b</span><span class="s2">&quot; world</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="o">...</span>         <span class="n">msg</span> <span class="o">=</span> <span class="k">await</span> <span class="n">rx</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
 <span class="o">...</span>
 <span class="o">...</span>     <span class="n">proc</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
 <span class="o">...</span>     <span class="k">return</span> <span class="n">msg</span>
@@ -1069,10 +1051,10 @@ messages.</p>
 <span class="o">...</span>     <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">childtask</span><span class="p">(</span><span class="n">pipe</span><span class="p">))</span>
 <span class="o">&gt;&gt;&gt;</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="k">async</span> <span class="k">def</span> <span class="nf">childtask</span><span class="p">(</span><span class="n">pipe</span><span class="p">):</span>
-<span class="o">...</span>     <span class="k">async</span> <span class="k">with</span> <span class="n">pipe</span><span class="o">.</span><span class="n">open</span><span class="p">()</span> <span class="k">as</span> <span class="n">pipe</span><span class="p">:</span>
-<span class="o">...</span>         <span class="k">await</span> <span class="n">pipe</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;hello&quot;</span><span class="p">)</span>
-<span class="o">...</span>         <span class="n">rep</span> <span class="o">=</span> <span class="k">await</span> <span class="n">pipe</span><span class="o">.</span><span class="n">reader</span><span class="p">()</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
-<span class="o">...</span>         <span class="k">await</span> <span class="n">pipe</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">rep</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
+<span class="o">...</span>     <span class="k">async</span> <span class="k">with</span> <span class="n">pipe</span><span class="o">.</span><span class="n">open</span><span class="p">()</span> <span class="k">as</span> <span class="p">(</span><span class="n">rx</span><span class="p">,</span> <span class="n">tx</span><span class="p">):</span>
+<span class="o">...</span>         <span class="n">tx</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;hello&quot;</span><span class="p">)</span>
+<span class="o">...</span>         <span class="n">rep</span> <span class="o">=</span> <span class="k">await</span> <span class="n">rx</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+<span class="o">...</span>         <span class="n">tx</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">rep</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
 <span class="o">&gt;&gt;&gt;</span>
 <span class="o">&gt;&gt;&gt;</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
 <span class="sa">b</span><span class="s1">&#39;HELLO WORLD</span><span class="se">\n</span><span class="s1">&#39;</span>
@@ -1147,17 +1129,17 @@ messages.</p>
 <span class="sd">&gt;&gt;&gt; async def main():</span>
 <span class="sd">...     mainpipe, chpipe = aioduplex()</span>
 <span class="sd">...</span>
-<span class="sd">...     with chpipe.detach() as tx:</span>
+<span class="sd">...     with chpipe.detach() as chpipe:</span>
 <span class="sd">...         proc = Process(target=childproc, args=(chpipe,))</span>
 <span class="sd">...         proc.start()</span>
 <span class="sd">...</span>
 <span class="sd">...     # The second pipe is now available in the child process</span>
 <span class="sd">...     # and detached from the parent process.</span>
 <span class="sd">...</span>
-<span class="sd">...     async with mainpipe.open() as mainpipe:</span>
-<span class="sd">...         req = await mainpipe.read(5)</span>
-<span class="sd">...         await mainpipe.write(req + b&quot; world\\n&quot;)</span>
-<span class="sd">...         msg = await mainpipe.reader().readline()</span>
+<span class="sd">...     async with mainpipe.open() as (rx, tx):</span>
+<span class="sd">...         req = await rx.read(5)</span>
+<span class="sd">...         tx.write(req + b&quot; world\\n&quot;)</span>
+<span class="sd">...         msg = await rx.readline()</span>
 <span class="sd">...</span>
 <span class="sd">...     proc.join()</span>
 <span class="sd">...     return msg</span>
@@ -1166,10 +1148,10 @@ messages.</p>
 <span class="sd">...     asyncio.run(childtask(pipe))</span>
 <span class="sd">&gt;&gt;&gt;</span>
 <span class="sd">&gt;&gt;&gt; async def childtask(pipe):</span>
-<span class="sd">...     async with pipe.open() as pipe:</span>
-<span class="sd">...         await pipe.write(b&quot;hello&quot;)</span>
-<span class="sd">...         rep = await pipe.reader().readline()</span>
-<span class="sd">...         await pipe.write(rep.upper())</span>
+<span class="sd">...     async with pipe.open() as (rx, tx):</span>
+<span class="sd">...         tx.write(b&quot;hello&quot;)</span>
+<span class="sd">...         rep = await rx.readline()</span>
+<span class="sd">...         tx.write(rep.upper())</span>
 <span class="sd">&gt;&gt;&gt;</span>
 <span class="sd">&gt;&gt;&gt; asyncio.run(main())</span>
 <span class="sd">b&#39;HELLO WORLD\\n&#39;</span>
@@ -1321,67 +1303,9 @@ messages.</p>
 
         <span class="k">return</span> <span class="n">transport</span><span class="p">,</span> <span class="n">tx</span>
 
-<span class="k">class</span> <span class="nc">AioDuplexConnection</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Represents one end of an opened duplex pipe.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">__pdoc__</span><span class="p">[</span><span class="s2">&quot;AioDuplexConnection.__init__&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rx</span><span class="p">:</span> <span class="n">StreamReader</span><span class="p">,</span> <span class="n">tx</span><span class="p">:</span> <span class="n">StreamWriter</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_rx</span> <span class="o">=</span> <span class="n">rx</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_tx</span> <span class="o">=</span> <span class="n">tx</span>
-
-    <span class="k">def</span> <span class="nf">reader</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StreamReader</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieve the underlying</span>
-<span class="sd">        [`StreamReader`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamReader)</span>
-<span class="sd">        instance.</span>
-
-<span class="sd">        This allows access to methods like `readline()`, `readuntil()`, etc.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rx</span>
-
-    <span class="k">def</span> <span class="nf">writer</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StreamWriter</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieve the underlying</span>
-<span class="sd">        [`StreamWriter`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter)</span>
-<span class="sd">        instance.</span>
-
-<span class="sd">        This allows access to methods like `writelines()`, `drain()`, etc.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tx</span>
-
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">buf</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Write the given bytes and wait for the stream to be drained.</span>
-
-<span class="sd">        This is a convenience method, see [`StreamWriter.write()`][write] for more</span>
-<span class="sd">        information.</span>
-
-<span class="sd">        [write]: https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter.write</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_tx</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span>
-        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tx</span><span class="o">.</span><span class="n">drain</span><span class="p">()</span>
-
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Read the given number of bytes.</span>
-
-<span class="sd">        This is a convenience method, see [`StreamReader.read()`][read] for more</span>
-<span class="sd">        information.</span>
-
-<span class="sd">        [read]: https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamReader.read</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rx</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
-
 <span class="k">class</span> <span class="nc">AioDuplex</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Represents one end of a duplex pipe,</span>
+<span class="sd">    Represents one end of a duplex pipe.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">__pdoc__</span><span class="p">[</span><span class="s2">&quot;AioDuplex.__init__&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
@@ -1407,18 +1331,21 @@ messages.</p>
             <span class="k">yield</span> <span class="bp">self</span>
 
     <span class="nd">@asynccontextmanager</span>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AsyncContextManager</span><span class="p">[</span><span class="s2">&quot;AioDuplexConnection&quot;</span><span class="p">]:</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AsyncContextManager</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="s2">&quot;StreamReader&quot;</span><span class="p">,</span> <span class="s2">&quot;StreamWriter&quot;</span><span class="p">]]:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Open this end of the duplex pipe on the current event loop.</span>
 
 <span class="sd">        This returns an async context manager, which must be used as part of an `async</span>
-<span class="sd">        with` context. When the context is entered, the pipe is opened and an instance of</span>
-<span class="sd">        `AioDuplexConnection` is returned as the context variable. When the context is</span>
-<span class="sd">        exited, the pipe is closed.</span>
+<span class="sd">        with` context. When the context is entered, the pipe is opened and the underlying</span>
+<span class="sd">        [`StreamReader`][reader] and [`StreamWriter`][writer] are returned as the context</span>
+<span class="sd">        variable. When the context is exited, the pipe is closed.</span>
+
+<span class="sd">        [reader]: https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamReader</span>
+<span class="sd">        [writer]: https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">async</span> <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rx</span><span class="o">.</span><span class="n">open</span><span class="p">()</span> <span class="k">as</span> <span class="n">rx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tx</span><span class="o">.</span><span class="n">open</span><span class="p">()</span> <span class="k">as</span> <span class="n">tx</span><span class="p">:</span>
-            <span class="k">yield</span> <span class="n">AioDuplexConnection</span><span class="p">(</span><span class="n">rx</span><span class="p">,</span> <span class="n">tx</span><span class="p">)</span>
+            <span class="k">yield</span> <span class="n">rx</span><span class="p">,</span> <span class="n">tx</span>
 </pre></div>
 
     
@@ -1565,7 +1492,7 @@ messages.</p>
         
     
         
-        <div class="desc"><p>Represents one end of a duplex pipe,</p></div>
+        <div class="desc"><p>Represents one end of a duplex pipe.</p></div>
     
     
     
@@ -1578,7 +1505,7 @@ messages.</p>
             
     <div class="codehilite"><pre><span></span><span class="k">class</span> <span class="nc">AioDuplex</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Represents one end of a duplex pipe,</span>
+<span class="sd">    Represents one end of a duplex pipe.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">__pdoc__</span><span class="p">[</span><span class="s2">&quot;AioDuplex.__init__&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
@@ -1604,18 +1531,21 @@ messages.</p>
             <span class="k">yield</span> <span class="bp">self</span>
 
     <span class="nd">@asynccontextmanager</span>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AsyncContextManager</span><span class="p">[</span><span class="s2">&quot;AioDuplexConnection&quot;</span><span class="p">]:</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AsyncContextManager</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="s2">&quot;StreamReader&quot;</span><span class="p">,</span> <span class="s2">&quot;StreamWriter&quot;</span><span class="p">]]:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Open this end of the duplex pipe on the current event loop.</span>
 
 <span class="sd">        This returns an async context manager, which must be used as part of an `async</span>
-<span class="sd">        with` context. When the context is entered, the pipe is opened and an instance of</span>
-<span class="sd">        `AioDuplexConnection` is returned as the context variable. When the context is</span>
-<span class="sd">        exited, the pipe is closed.</span>
+<span class="sd">        with` context. When the context is entered, the pipe is opened and the underlying</span>
+<span class="sd">        [`StreamReader`][reader] and [`StreamWriter`][writer] are returned as the context</span>
+<span class="sd">        variable. When the context is exited, the pipe is closed.</span>
+
+<span class="sd">        [reader]: https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamReader</span>
+<span class="sd">        [writer]: https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">async</span> <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rx</span><span class="o">.</span><span class="n">open</span><span class="p">()</span> <span class="k">as</span> <span class="n">rx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tx</span><span class="o">.</span><span class="n">open</span><span class="p">()</span> <span class="k">as</span> <span class="n">tx</span><span class="p">:</span>
-            <span class="k">yield</span> <span class="n">AioDuplexConnection</span><span class="p">(</span><span class="n">rx</span><span class="p">,</span> <span class="n">tx</span><span class="p">)</span>
+            <span class="k">yield</span> <span class="n">rx</span><span class="p">,</span> <span class="n">tx</span>
 </pre></div>
 
     
@@ -1721,7 +1651,7 @@ the stream is closed in the parent process.</p></div>
             </div>
             
             <div class="funcret name">
-                <span class="funcarrow">→</span>AbstractAsyncContextManager[<a href="#aiopipe.AioDuplexConnection">AioDuplexConnection</a>]
+                <span class="funcarrow">→</span>AbstractAsyncContextManager[Tuple[StreamReader, StreamWriter]]
             </div>
             
         </div>
@@ -1733,9 +1663,9 @@ the stream is closed in the parent process.</p></div>
         
         <div class="desc"><p>Open this end of the duplex pipe on the current event loop.</p>
 <p>This returns an async context manager, which must be used as part of an <code>async
-with</code> context. When the context is entered, the pipe is opened and an instance of
-<a href="#aiopipe.AioDuplexConnection"><code>AioDuplexConnection</code></a> is returned as the context variable. When the context is
-exited, the pipe is closed.</p></div>
+with</code> context. When the context is entered, the pipe is opened and the underlying
+<a href="https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamReader"><code>StreamReader</code></a> and <a href="https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter"><code>StreamWriter</code></a> are returned as the context
+variable. When the context is exited, the pipe is closed.</p></div>
     
     
     
@@ -1748,365 +1678,21 @@ exited, the pipe is closed.</p></div>
         <div class="source hidden">
             
     <div class="codehilite"><pre><span></span><span class="nd">@asynccontextmanager</span>
-<span class="k">async</span> <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AsyncContextManager</span><span class="p">[</span><span class="s2">&quot;AioDuplexConnection&quot;</span><span class="p">]:</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AsyncContextManager</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="s2">&quot;StreamReader&quot;</span><span class="p">,</span> <span class="s2">&quot;StreamWriter&quot;</span><span class="p">]]:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Open this end of the duplex pipe on the current event loop.</span>
 
 <span class="sd">    This returns an async context manager, which must be used as part of an `async</span>
-<span class="sd">    with` context. When the context is entered, the pipe is opened and an instance of</span>
-<span class="sd">    `AioDuplexConnection` is returned as the context variable. When the context is</span>
-<span class="sd">    exited, the pipe is closed.</span>
+<span class="sd">    with` context. When the context is entered, the pipe is opened and the underlying</span>
+<span class="sd">    [`StreamReader`][reader] and [`StreamWriter`][writer] are returned as the context</span>
+<span class="sd">    variable. When the context is exited, the pipe is closed.</span>
+
+<span class="sd">    [reader]: https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamReader</span>
+<span class="sd">    [writer]: https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">async</span> <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rx</span><span class="o">.</span><span class="n">open</span><span class="p">()</span> <span class="k">as</span> <span class="n">rx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tx</span><span class="o">.</span><span class="n">open</span><span class="p">()</span> <span class="k">as</span> <span class="n">tx</span><span class="p">:</span>
-        <span class="k">yield</span> <span class="n">AioDuplexConnection</span><span class="p">(</span><span class="n">rx</span><span class="p">,</span> <span class="n">tx</span><span class="p">)</span>
-</pre></div>
-
-    
-        </div>
-    </div>
-    
-    
-    
-    </div>
-                
-            
-        </div>
-    </div>
-            
-                
-    
-    
-    
-    
-    
-
-    
-    
-    
-
-    <div class="item">
-        <a href="#aiopipe.AioDuplexConnection" id="aiopipe.AioDuplexConnection" class="name">
-        <span class="type">class</span> <span class="ident">AioDuplexConnection</span>
-    </a>
-        
-    
-        
-        <div class="desc"><p>Represents one end of an opened duplex pipe.</p></div>
-    
-    
-    
-    
-    <div class="sourcecontainer">
-        <a href="#" class="sourcebutton">
-            Source <span class="expandicon"></span>
-        </a>
-        <div class="source hidden">
-            
-    <div class="codehilite"><pre><span></span><span class="k">class</span> <span class="nc">AioDuplexConnection</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Represents one end of an opened duplex pipe.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">__pdoc__</span><span class="p">[</span><span class="s2">&quot;AioDuplexConnection.__init__&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rx</span><span class="p">:</span> <span class="n">StreamReader</span><span class="p">,</span> <span class="n">tx</span><span class="p">:</span> <span class="n">StreamWriter</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_rx</span> <span class="o">=</span> <span class="n">rx</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_tx</span> <span class="o">=</span> <span class="n">tx</span>
-
-    <span class="k">def</span> <span class="nf">reader</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StreamReader</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieve the underlying</span>
-<span class="sd">        [`StreamReader`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamReader)</span>
-<span class="sd">        instance.</span>
-
-<span class="sd">        This allows access to methods like `readline()`, `readuntil()`, etc.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rx</span>
-
-    <span class="k">def</span> <span class="nf">writer</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StreamWriter</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieve the underlying</span>
-<span class="sd">        [`StreamWriter`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter)</span>
-<span class="sd">        instance.</span>
-
-<span class="sd">        This allows access to methods like `writelines()`, `drain()`, etc.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tx</span>
-
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">buf</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Write the given bytes and wait for the stream to be drained.</span>
-
-<span class="sd">        This is a convenience method, see [`StreamWriter.write()`][write] for more</span>
-<span class="sd">        information.</span>
-
-<span class="sd">        [write]: https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter.write</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_tx</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span>
-        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tx</span><span class="o">.</span><span class="n">drain</span><span class="p">()</span>
-
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Read the given number of bytes.</span>
-
-<span class="sd">        This is a convenience method, see [`StreamReader.read()`][read] for more</span>
-<span class="sd">        information.</span>
-
-<span class="sd">        [read]: https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamReader.read</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rx</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
-</pre></div>
-
-    
-        </div>
-    </div>
-    
-    
-
-        <div class="class">
-            <h3 class="itemtitle" title="Listed in Method Resolution Order">Ancestors</h3>
-            <ul class="ancestors">
-            
-                <li>builtins.object</li>
-            
-            </ul>
-            
-            
-            
-            
-            
-            
-            
-                <h3 class="itemtitle">Methods</h3>
-                
-                    
-    
-    <div class="item">
-        <div class="funcdef" id="aiopipe.AioDuplexConnection.read">
-            <div class="funcinit">
-                <a href="#aiopipe.AioDuplexConnection.read" class="name">
-                    <div class="funcname">
-                        <span class="type">async def</span>
-                        <span class="ident">read</span></div>
-                </a>(
-                <div class="funcargs">self, n: int = -1)</div>
-            </div>
-            
-            <div class="funcret name">
-                <span class="funcarrow">→</span>bytes
-            </div>
-            
-        </div>
-        
-        
-        
-        
-    
-        
-        <div class="desc"><p>Read the given number of bytes.</p>
-<p>This is a convenience method, see <a href="https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamReader.read"><code>StreamReader.read()</code></a> for more
-information.</p></div>
-    
-    
-    
-    
-    
-    <div class="sourcecontainer">
-        <a href="#" class="sourcebutton">
-            Source <span class="expandicon"></span>
-        </a>
-        <div class="source hidden">
-            
-    <div class="codehilite"><pre><span></span><span class="k">async</span> <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Read the given number of bytes.</span>
-
-<span class="sd">    This is a convenience method, see [`StreamReader.read()`][read] for more</span>
-<span class="sd">    information.</span>
-
-<span class="sd">    [read]: https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamReader.read</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rx</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
-</pre></div>
-
-    
-        </div>
-    </div>
-    
-    
-    
-    </div>
-                
-                    
-    
-    <div class="item">
-        <div class="funcdef" id="aiopipe.AioDuplexConnection.reader">
-            <div class="funcinit">
-                <a href="#aiopipe.AioDuplexConnection.reader" class="name">
-                    <div class="funcname">
-                        <span class="type">def</span>
-                        <span class="ident">reader</span></div>
-                </a>(
-                <div class="funcargs">self)</div>
-            </div>
-            
-            <div class="funcret name">
-                <span class="funcarrow">→</span>asyncio.streams.StreamReader
-            </div>
-            
-        </div>
-        
-        
-        
-        
-    
-        
-        <div class="desc"><p>Retrieve the underlying
-<a href="https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamReader"><code>StreamReader</code></a>
-instance.</p>
-<p>This allows access to methods like <code>readline()</code>, <code>readuntil()</code>, etc.</p></div>
-    
-    
-    
-    
-    
-    <div class="sourcecontainer">
-        <a href="#" class="sourcebutton">
-            Source <span class="expandicon"></span>
-        </a>
-        <div class="source hidden">
-            
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">reader</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StreamReader</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Retrieve the underlying</span>
-<span class="sd">    [`StreamReader`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamReader)</span>
-<span class="sd">    instance.</span>
-
-<span class="sd">    This allows access to methods like `readline()`, `readuntil()`, etc.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rx</span>
-</pre></div>
-
-    
-        </div>
-    </div>
-    
-    
-    
-    </div>
-                
-                    
-    
-    <div class="item">
-        <div class="funcdef" id="aiopipe.AioDuplexConnection.write">
-            <div class="funcinit">
-                <a href="#aiopipe.AioDuplexConnection.write" class="name">
-                    <div class="funcname">
-                        <span class="type">async def</span>
-                        <span class="ident">write</span></div>
-                </a>(
-                <div class="funcargs">self, buf: bytes)</div>
-            </div>
-            
-        </div>
-        
-        
-        
-        
-    
-        
-        <div class="desc"><p>Write the given bytes and wait for the stream to be drained.</p>
-<p>This is a convenience method, see <a href="https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter.write"><code>StreamWriter.write()</code></a> for more
-information.</p></div>
-    
-    
-    
-    
-    
-    <div class="sourcecontainer">
-        <a href="#" class="sourcebutton">
-            Source <span class="expandicon"></span>
-        </a>
-        <div class="source hidden">
-            
-    <div class="codehilite"><pre><span></span><span class="k">async</span> <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">buf</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Write the given bytes and wait for the stream to be drained.</span>
-
-<span class="sd">    This is a convenience method, see [`StreamWriter.write()`][write] for more</span>
-<span class="sd">    information.</span>
-
-<span class="sd">    [write]: https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter.write</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="bp">self</span><span class="o">.</span><span class="n">_tx</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span>
-    <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tx</span><span class="o">.</span><span class="n">drain</span><span class="p">()</span>
-</pre></div>
-
-    
-        </div>
-    </div>
-    
-    
-    
-    </div>
-                
-                    
-    
-    <div class="item">
-        <div class="funcdef" id="aiopipe.AioDuplexConnection.writer">
-            <div class="funcinit">
-                <a href="#aiopipe.AioDuplexConnection.writer" class="name">
-                    <div class="funcname">
-                        <span class="type">def</span>
-                        <span class="ident">writer</span></div>
-                </a>(
-                <div class="funcargs">self)</div>
-            </div>
-            
-            <div class="funcret name">
-                <span class="funcarrow">→</span>asyncio.streams.StreamWriter
-            </div>
-            
-        </div>
-        
-        
-        
-        
-    
-        
-        <div class="desc"><p>Retrieve the underlying
-<a href="https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter"><code>StreamWriter</code></a>
-instance.</p>
-<p>This allows access to methods like <code>writelines()</code>, <code>drain()</code>, etc.</p></div>
-    
-    
-    
-    
-    
-    <div class="sourcecontainer">
-        <a href="#" class="sourcebutton">
-            Source <span class="expandicon"></span>
-        </a>
-        <div class="source hidden">
-            
-    <div class="codehilite"><pre><span></span><span class="k">def</span> <span class="nf">writer</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StreamWriter</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Retrieve the underlying</span>
-<span class="sd">    [`StreamWriter`](https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter)</span>
-<span class="sd">    instance.</span>
-
-<span class="sd">    This allows access to methods like `writelines()`, `drain()`, etc.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tx</span>
+        <span class="k">yield</span> <span class="n">rx</span><span class="p">,</span> <span class="n">tx</span>
 </pre></div>
 
     
