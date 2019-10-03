@@ -57,7 +57,7 @@ messages.
 >>> async def main():
 ...     mainpipe, chpipe = aioduplex()
 ...
-...     with chpipe.detach() as tx:
+...     with chpipe.detach() as chpipe:
 ...         proc = Process(target=childproc, args=(chpipe,))
 ...         proc.start()
 ...
@@ -233,7 +233,7 @@ class AioPipeWriter(AioPipeStream):
 
 class AioDuplex:
     """
-    Represents one end of a duplex pipe,
+    Represents one end of a duplex pipe.
     """
 
     __pdoc__["AioDuplex.__init__"] = None

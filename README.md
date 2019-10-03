@@ -61,7 +61,7 @@ messages.
 >>> async def main():
 ...     mainpipe, chpipe = aioduplex()
 ...
-...     with chpipe.detach() as tx:
+...     with chpipe.detach() as chpipe:
 ...         proc = Process(target=childproc, args=(chpipe,))
 ...         proc.start()
 ...
