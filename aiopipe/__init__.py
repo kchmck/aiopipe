@@ -88,7 +88,7 @@ b'HELLO WORLD\\n'
 """
 
 from asyncio import StreamReader, StreamWriter, StreamReaderProtocol, BaseTransport, \
-        get_running_loop
+        get_running_loop, sleep
 from contextlib import contextmanager, asynccontextmanager
 from typing import Tuple, Any, ContextManager, AsyncContextManager
 import os
@@ -127,18 +127,10 @@ class AioPipeStream:
 
     def __init__(self, fd):
         self._fd = fd
-        self._moved = False
-        """
-        Tracks if the fd is controlled by asyncio.
-
-        This object will only close the fd if it's not controlled by asyncio. Otherwise,
-        asyncio throws an error when it tries to close the fd itself.
-        """
 
     @asynccontextmanager
     async def open(self):
         transport, stream = await self._open()
-        self._moved = True
 
         try:
             yield stream
@@ -148,6 +140,9 @@ class AioPipeStream:
             except OSError:
                 # The transport/protocol sometimes closes the fd before this is reached.
                 pass
+
+            # Allow event loop callbacks to run and handle closed transport.
+            await sleep(0)
 
     async def _open(self) -> Tuple[BaseTransport, Any]:
         raise NotImplementedError()
@@ -172,9 +167,6 @@ class AioPipeStream:
             os.close(self._fd)
 
     def __del__(self):
-        if self._moved:
-            return
-
         try:
             os.close(self._fd)
         except OSError:

@@ -31,20 +31,9 @@ def test_double_closed():
             async with tx.open() as t:
                 pass
 
-        assert rx._moved
-        assert tx._moved
-        rx._moved = False
-        tx._moved = False
-
     asyncio.run(main())
 
-    assert mock.call_count == 2
-
-    messages = [args[1]["message"] for args, _ in mock.call_args_list]
-    assert all("_call_connection_lost" in m for m in messages)
-
-    excepts = [args[1]["exception"] for args, _ in mock.call_args_list]
-    assert all(isinstance(e, OSError) and e.errno == 9 for e in excepts)
+    assert mock.call_count == 0
 
 def test_moved():
     mock = Mock()
