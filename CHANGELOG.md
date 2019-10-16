@@ -12,6 +12,10 @@
 - Python 3.7+ is now required for the `get_running_loop()` and `asynccontextmanager()`
   functions
 
+## v0.2.0 - 2019-10-03
+
+- Skipped due to mistake that caused readme to not display on PyPi
+
 ## v0.1.3 – 2018-10-19
 
 - Bug fixes
