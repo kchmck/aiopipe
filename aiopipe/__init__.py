@@ -219,7 +219,7 @@ class AioPipeWriter(AioPipeStream):
         transport, proto = await get_running_loop().connect_write_pipe(
             lambda: StreamReaderProtocol(rx),
             os.fdopen(self._fd, "w"))
-        tx = StreamWriter(transport, proto, rx, None)
+        tx = StreamWriter(transport, proto, rx, get_running_loop())
 
         return transport, tx
 
