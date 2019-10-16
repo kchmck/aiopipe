@@ -1,3 +1,10 @@
+## v0.2.2 - 2019-10-16
+
+## Fixes
+
+- Fixed `AttributeError: 'NoneType' object has no attribute 'create_future'` error in
+  `StreamWriter` that appeared with Python 3.8
+
 ## v0.2.1 – 2019-10-03
 
 ### New features
