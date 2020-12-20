@@ -1,3 +1,7 @@
+# Archived (Dec 2020)
+
+Since this package is fairly simple and contained in a single file, it can be vendored into projects and modified as needed.
+
 # aiopipe -- Multiprocess communication pipes for asyncio
 
 [![Documentation](https://img.shields.io/badge/documentation-blue.svg)](https://kchmck.github.io/aiopipe/aiopipe/)
