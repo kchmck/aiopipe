@@ -130,6 +130,9 @@ class AioPipeStream:
 
     @asynccontextmanager
     async def open(self):
+        if self._fd is None:
+            raise ValueError("File handle already closed")
+
         transport, stream = await self._open()
 
         try:
@@ -137,6 +140,7 @@ class AioPipeStream:
         finally:
             try:
                 transport.close()
+                self._fd = None
             except OSError:
                 # The transport/protocol sometimes closes the fd before this is reached.
                 pass
@@ -160,15 +164,26 @@ class AioPipeStream:
         the stream is closed in the parent process.
         """
 
+        if self._fd is None:
+            raise ValueError("File handle already closed")
         try:
             os.set_inheritable(self._fd, True)
             yield self
         finally:
+            # NB: close and explicitly invalidate the file handle here. Any call
+            # to os.pipe() after this point may create a new file handle with
+            # the same value, which we will then happily close whenever the
+            # interpreter happens to call __del__()
+            self.close()
+
+    def close(self):
+        if self._fd is not None:
             os.close(self._fd)
+            self._fd = None
 
     def __del__(self):
         try:
-            os.close(self._fd)
+            self.close()
         except OSError:
             pass
 
